@@ -1,0 +1,259 @@
+# FILE: demo_keyword.resource
+
+#  ███████╗███████╗████████╗████████╗██╗███╗   ██╗ ██████╗ ███████╗
+#  ██╔════╝██╔════╝╚══██╔══╝╚══██╔══╝██║████╗  ██║██╔════╝ ██╔════╝
+#  ███████╗█████╗     ██║      ██║   ██║██╔██╗ ██║██║  ███╗███████╗
+#  ╚════██║██╔══╝     ██║      ██║   ██║██║╚██╗██║██║   ██║╚════██║
+#  ███████║███████╗   ██║      ██║   ██║██║ ╚████║╚██████╔╝███████║
+#  ╚══════╝╚══════╝   ╚═╝      ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝
+*** Settings ***
+Documentation     Wordpress Testing.
+#Library           SeleniumLibrary
+Library           Selenium2Library
+Library           OperatingSystem
+Library           String
+Library           Collections
+
+
+
+#  ██╗  ██╗███████╗██╗   ██╗██╗    ██╗ ██████╗ ██████╗ ██████╗ ███████╗
+#  ██║ ██╔╝██╔════╝╚██╗ ██╔╝██║    ██║██╔═══██╗██╔══██╗██╔══██╗██╔════╝
+#  █████╔╝ █████╗   ╚████╔╝ ██║ █╗ ██║██║   ██║██████╔╝██║  ██║███████╗
+#  ██╔═██╗ ██╔══╝    ╚██╔╝  ██║███╗██║██║   ██║██╔══██╗██║  ██║╚════██║
+#  ██║  ██╗███████╗   ██║   ╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝███████║
+#  ╚═╝  ╚═╝╚══════╝   ╚═╝    ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝
+*** Keywords ***
+
+# ================ S E T U P S  &  T E A R D O W N S ======================
+Setup_Suite
+    create webdriver    ${BROWSER}
+
+
+Setup_Test
+    go to  ${URL}
+    Title Should Be     NCS-Testing – Eine weitere WordPress-Website
+
+
+Setup_AdminLogin
+    Navigate To Login Page
+    Input Username      ${SuperUser}
+    Input Password      ${SuperUserPW}
+    Submit Credentials
+    Dashboard Should Be Open
+
+
+TD_Test
+    TD_AdminLogout
+    Check if logged out
+
+
+TD_Suite
+    Close Browser
+
+
+TD_AdminLogout
+    mouse over          wp-admin-bar-top-secondary
+    wait until element is visible   wp-admin-bar-logout
+    click element       wp-admin-bar-logout
+
+
+# ================ N A V I G A T I O N  &  C L I C K ======================
+Navigate To Login Page
+    click element       link:Anmelden
+
+
+Navigate To User Page
+    click element       xpath://div[@class='wp-menu-image dashicons-before dashicons-admin-users']
+
+
+Click on "Neu hinzufuegen" (User)
+    click element       link:Neu hinzufügen
+
+
+Click on "Password anzeigen"
+    click button        xpath://button[@class='button wp-generate-pw hide-if-no-js'][1]
+
+
+Disable Email notification
+    unselect checkbox   send_user_notification
+
+
+Click on "Neuen Benutzer hinzufuegen"
+    click button        createusersub
+
+
+Submit Credentials
+    Click Button        wp-submit
+
+
+Search for User
+    click button        search-submit
+
+
+Mouseover over the user
+    mouse over          xpath:.//td[@class='username column-username has-row-actions column-primary'][1]/strong
+
+
+Click on "Loeschen"
+    click element       xpath://tr/td[@class='username column-username has-row-actions column-primary']/div/span[@class='delete']
+
+
+Click on "Den gesamten Inhalt loeschen" if possible
+    ${Check}=   run keyword and return status  element should be visible    xpath://*[@id='delete_option0']
+    run keyword if      ${Check}    click element  xpath://*[@id='delete_option0']
+
+
+Click on "Loeschen bestaetigen"
+    click button  xpath://*[@id='submit']
+
+
+# =========================== I N P U T S =================================
+Input Username
+    [Arguments]     ${username}
+    wait until element is visible   user_login
+    click element   user_login
+    Input Text      user_login      ${username}
+
+
+Input Password
+    [Arguments]     ${password}
+    Input Text      user_pass       ${password}
+
+
+Input EMail
+    [Arguments]     ${email}
+    Input Text      email           ${email}
+
+
+Input FirstName
+    [Arguments]     ${firstname}
+    Input Text      first_name      ${firstname}
+
+
+Input LastName
+    [Arguments]     ${lastname}
+    Input Text      last_name       ${lastname}
+
+
+Enter new Password
+    [Arguments]     ${pw}
+    wait until element is visible   pass1-text
+    input text      pass1-text      ${pw}
+
+
+Change the Role
+    [Arguments]     ${role}
+    select from list by label    role   ${role}
+
+
+Enter username in searchfield
+    [Arguments]     ${username}
+    clear element text  user-search-input
+    input text      user-search-input   ${username}
+
+
+# =========================== C H E C K S =================================
+Textmessage should appear
+    Wait Until Element Contains         message             Neuer Benutzer erstellt
+
+
+Dashboard Should Be Open
+    Title Should Be                     Dashboard ‹ NCS-Testing — WordPress
+
+
+Password Error Message Should Be Shown
+    Wait Until Element Contains         login_error     FEHLER: Das Passwort
+
+
+User Error Message Should Be Shown
+    Wait Until Element Contains         login_error     FEHLER: Ungültiger Benutzername
+
+
+Check if logged out
+    Wait Until Element Contains         xpath:/html//p[@class='message'][1]     Du hast dich erfolgreich abgemeldet
+
+
+Check if the user is deleted
+    wait until element contains         xpath://div[@id='message']/p            Benutzer gelöscht
+
+
+# ============== K E Y W O R D   C O L L E C T I O N ======================
+Create User Loop with Template
+    [Arguments]     ${Benutzername}    ${Email}    ${Vorname}    ${Nachname}    ${Passwort}    ${Rolle}
+    Navigate To User Page
+    Click on "Neu hinzufuegen" (User)
+    Input Username      ${Benutzername}
+    Input EMail         ${Email}
+    Input FirstName     ${Vorname}
+    Input LastName      ${Nachname}
+    Click on "Password anzeigen"
+    Enter new Password  ${Passwort}
+    Disable Email notification
+    Change the Role     ${Rolle}
+    Click on "Neuen Benutzer hinzufuegen"
+    Textmessage should appear
+    Screenshot          CreateUser_${Benutzername}.png
+
+
+Create User Loop with CSV
+    @{LINES}=   Process Data File   testdata.csv
+    : FOR    ${LINE}    IN    @{LINES}
+    \    @{COLUMNS}=    Split String    ${LINE}    separator=,${SPACE}
+    \    Navigate To User Page
+    \    Click on "Neu hinzufuegen" (User)
+    \    Input Username      @{COLUMNS}[0]
+    \    Input EMail         @{COLUMNS}[1]
+    \    Input FirstName     @{COLUMNS}[2]
+    \    Input LastName      @{COLUMNS}[3]
+    \    Click on "Password anzeigen"
+    \    Enter new Password  @{COLUMNS}[4]
+    \    Disable Email notification
+    \    Change the Role     @{COLUMNS}[5]
+    \    Click on "Neuen Benutzer hinzufuegen"
+    \    Textmessage should appear
+    \    Screenshot         CreateUser_@{COLUMNS}[0].png
+
+
+Delete User Loop with Template
+    [Arguments]     ${Benutzername}
+    Navigate To User Page
+    Enter username in searchfield   ${Benutzername}
+    Search for User
+    Mouseover over the user
+    Click on "Loeschen"
+    Click on "Den gesamten Inhalt loeschen" if possible
+    Click on "Loeschen bestaetigen"
+    Check if the user is deleted
+    Screenshot  DeleteUser_${Benutzername}.png
+
+
+
+# ============================ T O O L S ==================================
+Screenshot
+    [Arguments]     ${filename}
+    capture page screenshot     ${filename}
+
+
+Process Data File
+    [Arguments]    ${FILE_NAME}
+    ${FILE_CONTENT}=   Get File    ${FILE_NAME}
+    Log    File Content: ${FILE_CONTENT}
+    @{LINES}=   Split to Lines and Remove Header   ${FILE_CONTENT}
+    Log    ${LINES}
+    [Return]    @{LINES}
+
+
+Split to Lines and Remove Header
+    [Arguments]    ${FILE_CONTENT}
+    @{LINES}=    Split To Lines    ${FILE_CONTENT}
+    Remove From List    ${LINES}    0
+    [Return]    @{LINES}
+
+
+# ======================== S L E E P ======================================
+Sleep1
+    sleep   1
+
+
+Sleep5
+    sleep   5
